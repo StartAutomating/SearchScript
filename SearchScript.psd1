@@ -69,16 +69,15 @@ Description = 'Search PowerShell Scripts'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = 'Search-Script'
+FunctionsToExport = 'SearchScript','Search-Script'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-CmdletsToExport = '*'
 
 # Variables to export from this module
-VariablesToExport = '*'
+VariablesToExport = 'SearchScript'
 
 # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-AliasesToExport = 'srsb', 'SearchScript', 'srScript'
+AliasesToExport = 'srsb', 'srScript'
 
 # DSC resources to export from this module
 # DscResourcesToExport = @()
