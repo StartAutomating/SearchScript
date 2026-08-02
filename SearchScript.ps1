@@ -10,7 +10,29 @@
     Get-Command -Module SearchScript | SearchScript
 .EXAMPLE
     # Get every part of every script in the current directory
-    dir *.ps1 | SearchScript
+    dir *.ps1 | Get-Command { $_ } | SearchScript
+.EXAMPLE
+    # Get every type reference in the current directory
+    dir *.ps1 |
+        Get-Command { $_ } |
+            SearchScript -For { param($ast) $ast.TypeName }
+.EXAMPLE
+    # Get every type reference in the current directory
+    # then get their reflected type
+    dir *.ps1 |
+        Get-Command { $_ } |
+            SearchScript -For {
+                param($ast) $ast.TypeName.GetReflectionType
+            } |
+                Foreach-Object {
+                    $_.TypeName.GetReflectionType()
+                }
+.EXAMPLE
+    # Get every command reference in the module search script
+    Get-Command Search-Script |
+        Search-Script -For {
+            param($ast) $ast -is [Management.Automation.Language.CommandAst]
+        }
 .EXAMPLE
     # Search for scripts that may be impacted by CVE-2025-54100
     Search-Script { Invoke-WebRequest } {
@@ -91,13 +113,33 @@ $Shallow
 )
 
 process {
-    if ($for -is [string]) {
-        $for = [ScriptBlock]::Create("param(`$ast) `$ast -match '$($for -replace "'","''")'")
-    }
-    if ($for -is [Regex]) {
-        $for = [ScriptBlock]::Create("param(`$ast) `$pattern = [Regex]::new('$($for -replace "'","''")','$($for.Options)'); `$ast -match `$pattern")
-    }
+    # If the script has no Ast, return
     if (-not $script.Ast) { return }
+
+    # If `-For` is a `[String]` or `[Regex]`,
+    # make sure we sanitize our input.
+    # ![Exploits of a Mom](https://xkcd.com/327/)
+
+    # If `-For` is a `[string]`
+    if ($for -is [string]) {
+        $for = # treat it as a pattern.
+            # Create a `[Scriptblock]` that matches that pattern.
+            [ScriptBlock]::Create("param(`$ast) `$ast -match '$(
+                # Always double single quotes to avoid code injection.
+                $for -replace "'","''"
+            )'")
+    }
+
+    # If `-For` is a `[Regex]`
+    if ($for -is [Regex]) {
+        $for =
+            # Create a `[ScriptBlock]` that matches that pattern.
+            [ScriptBlock]::Create("param(`$ast) `$pattern = [Regex]::new('$(
+                # Always double single quotes to avoid code injection.
+                $for -replace "'","''"
+            )','$($for.Options)'); `$ast -match `$pattern")
+    }
     
+    # Call `.FindAll` and let our results flow
     $Script.Ast.FindAll($for, -not $Shallow)
 }
