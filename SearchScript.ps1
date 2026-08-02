@@ -25,6 +25,40 @@
     }
 #>
 [Alias('srsb', 'srScript','SearchScript')]
+[ArgumentCompleter({
+    <#
+    .SYNOPSIS
+        History Completer
+    .DESCRIPTION
+        History Argument Completer for a function.
+        
+        This looks thru the current session history for uses of this command.
+    #>
+    param($wordToComplete, $commandAst, $cursorPosition)
+
+    # If there is no command ast, return
+    if (-not $commandAst) { return }
+    
+    # Whenever we find a match, we need all elements except the one being completed    
+    $upTilNow = foreach ($element in $commandAst.CommandElements) {
+        if ($element.Extent.EndOffset -ge $cursorPosition) {
+            break
+        }
+        $element
+    }
+    
+    # Now, to find any matching history entries, we Get-History
+    @(                
+        foreach ($historyItem in Get-History) {
+            # looking for things that are _like_ the entire ast
+            if ($historyItem.CommandLine -like "$commandAst*") {
+                # and returning the current word(s) to complete
+                # replacing any leading whitespaces, so we don't tab too much.
+                $historyItem.CommandLine.Substring("$upTilNow".Length) -replace '^\s+'
+            }
+        }
+    )
+})]
 param(
 # The script to search
 [Parameter(ValueFromPipeline,ValueFromPipelineByPropertyName)]
