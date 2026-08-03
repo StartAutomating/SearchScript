@@ -125,7 +125,7 @@ $Script,
 })]
 [Alias('Pattern','Needle','Predicate','SearchScript')]
 [PSObject]
-$For = [string]".",
+$For = [string]"/./",
 
 # If set, will perform a shallow search.
 # By default will search a scriptblock and nested blocks.
