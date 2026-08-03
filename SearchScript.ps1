@@ -34,6 +34,26 @@
             param($ast) $ast -is [Management.Automation.Language.CommandAst]
         }
 .EXAMPLE
+    # Get every `[Management.Automation.Language.VariableAst]` in Search-Script
+    Get-Command Search-Script |
+        Search-Script -For ([Management.Automation.Language.VariableAst])        
+.EXAMPLE
+    # Search Script for every `[type]`
+    Get-Command Search-Script |        
+        Search-Script -For ([type])
+.EXAMPLE
+    # Search-Script for every `[ScriptBlock]`
+    Get-Command Search-Script |
+        Search-Script -For ([ScriptBlock])
+.EXAMPLE
+    # Get every `[ScriptBlock]` and `[string]` reference in Search-Script
+    Get-Command Search-Script |        
+        Search-Script -For ([ScriptBlock], [string])
+.EXAMPLE
+    # Get every `[IComparable]` reference in Search-Script
+    Get-Command Search-Script |        
+        Search-Script -For ([IComparable])
+.EXAMPLE
     # Search for scripts that may be impacted by CVE-2025-54100
     Search-Script { Invoke-WebRequest } {
         param($ast)            
@@ -96,6 +116,7 @@ $Script,
         [ScriptBlock],
         [string],
         [Regex],
+        [type],
         [Func[Management.Automation.Language.Ast,bool]]
     foreach ($validType in $validTypes) {
         if ($_ -is $validType) { return $true}
@@ -138,6 +159,51 @@ process {
                 # Always double single quotes to avoid code injection.
                 $for -replace "'","''"
             )','$($for.Options)'); `$ast -match `$pattern")
+    }
+
+    if ($For -as [type[]]) {
+        $for =
+            # Create a `[ScriptBlock]` that looks for that type.
+            # This one is more complicated, so we will create it in two parts 
+            [ScriptBlock]::Create((
+(@(
+    # dynamically create the list of types
+    'param($ast)'
+    "`$types = @("
+    foreach ($forType in $for) {
+        $forType = $forType -as [type]        
+        if (-not $forType) { continue }
+        "[$($forType.FullName)]"
+    }    
+    ")"     
+) -join [Environment]::NewLine) + {
+# Find a reflected type, if there is one.
+$reflectedType = 
+    if ($ast.TypeName.GetReflectionType) {
+        $ast.TypeName.GetReflectionType()
+    } else {
+        $null   
+    }
+
+# Go over each of our potential types
+# Several conditions would be a use of our type
+foreach ($type in $types) {
+    # * If the ast is that type, return true
+    if ($ast -is $type) { return $true } 
+    if (-not $reflectedType) { continue }
+    # * If the reflected type is exactly that type, return true
+    if ($reflectedType -eq $type) { return $true }
+    # * If the reflected type is a subclass of that type, return true
+    if ($reflectedType.IsSubClassOf($type)) { return $true }
+    # * If the type is an interface,
+    #   return true if the reflected type implements it    
+    if ($type.IsInterface -and $reflectedType.GetInterface($type)) {
+        return $true
+    }
+}
+# Returning nothing will be falsy, and will not return the element.
+}
+            ))
     }
     
     # Call `.FindAll` and let our results flow
