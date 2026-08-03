@@ -12,7 +12,7 @@
 RootModule = 'SearchScript.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.1'
+ModuleVersion = '0.1.1'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -27,7 +27,7 @@ Author = 'James Brundage'
 CompanyName = 'Start Automating'
 
 # Copyright statement for this module
-Copyright = '2025 Start Automating'
+Copyright = '2025-2026 Start Automating'
 
 # Description of the functionality provided by this module
 Description = 'Search PowerShell Scripts'
@@ -69,16 +69,15 @@ Description = 'Search PowerShell Scripts'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = 'Search-Script'
+FunctionsToExport = 'SearchScript','Search-Script'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-CmdletsToExport = '*'
 
 # Variables to export from this module
-VariablesToExport = '*'
+VariablesToExport = 'SearchScript'
 
 # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-AliasesToExport = 'srsb', 'SearchScript', 'srScript'
+AliasesToExport = 'srsb', 'srScript'
 
 # DSC resources to export from this module
 # DscResourcesToExport = @()
@@ -95,7 +94,7 @@ PrivateData = @{
     PSData = @{
 
         # Tags applied to this module. These help with module discovery in online galleries.
-        Tags = @('SearchScript','Search')
+        Tags = @('SearchScript','Search','Cybersecurity')
 
         # A URL to the license for this module.
         LicenseUri = 'https://github.com/StartAutomating/SearchScript/blob/main/LICENSE'
@@ -108,12 +107,78 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = @'
-## SearchScript 0.1:
 
-* SearchScript is a simple module to search scripts (#1)
-* SearchScript has a simple build and tests (#2)
-* `Search-Script` lets us search a script using the abstract syntax tree (#3)
+## SearchScript 0.1.1
 
+* Refactoring module into an Eponym (#6)
+* Adding history completer (#7)
+* Adding more examples (#8)
+* `Search-Script -For ([type])` support (#9)
+* `Search-Script -For ([string])` literals (#10)
+* Added -Verbose support (#11)
+* `README.md.ps1` (#12)
+
+---
+
+Additional release notes in [CHANGELOG](https://github.com/StartAutomating/SearchScript/blob/main/CHANGELOG.md)
+
+'@
+
+        PSIntro = @'
+## Introduction
+
+Every once in a while, we've got to search our scripts, often to make a particular update.
+
+Sadly, we're often falling back on Select-String to do this.
+
+This isn't ideal, because this means we lose the context around our scripts.
+
+So why not make a quick tool to search PowerShell ScriptBlocks using the Abstract Syntax Tree?
+
+## Examples
+
+Let's start simple.  As a general rule, we don't want to use Invoke-Expression in our scripts.
+
+We can find any matching part of the syntax tree:
+
+~~~PowerShell
+{
+    iex "'I could do anything'"    
+}, {
+    Invoke-Expression "IsBad, ok"
+}, {
+    "this is fine"
+} | 
+    Search-Script -For "^(iex|Invoke-Expression)"
+~~~
+
+Suppose we want to update any scripts that use Invoke-WebRequest,
+in order to address [CVE-2025-54100](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2025-54100).
+
+We can use a little bit of Regex to identify them,
+but it gets a _lot_ trickier to write a pattern that will find if it's already fixed or not.
+
+If we could just see that they use -UseBasicParsing, then it's already been fixed.
+
+This little script helps us tell the difference:
+
+~~~PowerShell
+{    
+    Invoke-WebRequest -Url $NotOK # not yet fixed
+},{    
+    Invoke-WebRequest -Url $OK -UseBasicParsing # already fixed
+} |
+    Search-Script -For {
+        param($ast)
+        if (-not $ast.CommandElements -or (
+            $ast.CommandElements[0] -notmatch 'Invoke-WebRequest|curl|iwr'
+        )) {
+            return $false
+        }
+        if (-not ($ast.CommandElements -match '-UseBasicParsing')) { return $true }
+        return $false
+    }
+~~~
 '@
 
         # Prerelease string of this module
