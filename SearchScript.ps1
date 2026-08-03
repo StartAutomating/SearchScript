@@ -157,9 +157,9 @@ process {
         # Always double single quotes to avoid code injection.
         $For = $for -replace "'","''"
         # Create a `[Scriptblock]` that finds exactly that string.
-        $for = [ScriptBlock]::Create("param(`$ast) `$ast.Extent.ToString() $operator '$(            
+        $for = [ScriptBlock]::Create("param(`$ast) (`$ast.Extent.ToString() $operator '$(            
             $For
-        )' -or `$ast.Value $operator $For")
+        )') -or (`$ast.Value $operator '$For')")
     }
 
     # If `-For` is a `[Regex]`
