@@ -1,5 +1,12 @@
 # SearchScript
 
+## SearchScript 0.1.2
+
+* `Search-Script -For ([type])` checks static types (#14)
+* `Search-Script -For ([string])` checks `Value` (#15)
+
+---
+
 ## SearchScript 0.1.1
 
 * Refactoring module into an Eponym (#6)

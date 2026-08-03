@@ -12,7 +12,7 @@
 RootModule = 'SearchScript.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.1.1'
+ModuleVersion = '0.1.2'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -108,15 +108,10 @@ PrivateData = @{
         # ReleaseNotes of this module
         ReleaseNotes = @'
 
-## SearchScript 0.1.1
+## SearchScript 0.1.2
 
-* Refactoring module into an Eponym (#6)
-* Adding history completer (#7)
-* Adding more examples (#8)
-* `Search-Script -For ([type])` support (#9)
-* `Search-Script -For ([string])` literals (#10)
-* Added -Verbose support (#11)
-* `README.md.ps1` (#12)
+* `Search-Script -For ([type])` checks static types (#14)
+* `Search-Script -For ([string])` checks `Value` (#15)
 
 ---
 

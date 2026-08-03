@@ -154,11 +154,12 @@ process {
             # and match instead.
             $operator = '-match'
         }
+        # Always double single quotes to avoid code injection.
+        $For = $for -replace "'","''"
         # Create a `[Scriptblock]` that finds exactly that string.
-        $for = [ScriptBlock]::Create("param(`$ast) `$ast.Extent.ToString() $operator '$(
-            # Always double single quotes to avoid code injection.
-            $for -replace "'","''"
-        )'")
+        $for = [ScriptBlock]::Create("param(`$ast) (`$ast.Extent.ToString() $operator '$(            
+            $For
+        )') -or (`$ast.Value $operator '$For')")
     }
 
     # If `-For` is a `[Regex]`
@@ -191,8 +192,10 @@ process {
 $reflectedType = 
     if ($ast.TypeName.GetReflectionType) {
         $ast.TypeName.GetReflectionType()
+    } elseif ($ast.StaticType) {
+        $ast.StaticType
     } else {
-        $null   
+        $null
     }
 
 # Go over each of our potential types
