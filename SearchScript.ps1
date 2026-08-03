@@ -143,12 +143,21 @@ process {
 
     # If `-For` is a `[string]`
     if ($for -is [string]) {
-        $for = # treat it as a pattern.
-            # Create a `[Scriptblock]` that matches that pattern.
-            [ScriptBlock]::Create("param(`$ast) `$ast -match '$(
-                # Always double single quotes to avoid code injection.
-                $for -replace "'","''"
-            )'")
+        # the operator is -eq by default.
+        $operator = '-eq'
+        # If it takes the form of a regex literal 
+        if ($for -match '^/.+/$') {
+            # strip the slashes
+            $for =
+                $for -replace '^/' -replace '/$'
+            # and match instead.
+            $operator = '-match'
+        }
+        # Create a `[Scriptblock]` that finds exactly that string.
+        $for = [ScriptBlock]::Create("param(`$ast) `$ast.Extent.ToString() $operator '$(
+            # Always double single quotes to avoid code injection.
+            $for -replace "'","''"
+        )'")
     }
 
     # If `-For` is a `[Regex]`
@@ -171,7 +180,7 @@ process {
     'param($ast)'
     "`$types = @("
     foreach ($forType in $for) {
-        $forType = $forType -as [type]        
+        $forType = $forType -as [type]
         if (-not $forType) { continue }
         "[$($forType.FullName)]"
     }    
@@ -206,6 +215,9 @@ foreach ($type in $types) {
             ))
     }
     
+    if ($VerbosePreference -notin 'silentlyContinue', 'ignore') {
+        Write-Verbose "Searching Script For {$for}"
+    }
     # Call `.FindAll` and let our results flow
     $Script.Ast.FindAll($for, -not $Shallow)
 }
