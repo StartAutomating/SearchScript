@@ -191,8 +191,10 @@ process {
 $reflectedType = 
     if ($ast.TypeName.GetReflectionType) {
         $ast.TypeName.GetReflectionType()
+    } elseif ($ast.StaticType) {
+        $ast.StaticType
     } else {
-        $null   
+        $null
     }
 
 # Go over each of our potential types
