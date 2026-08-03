@@ -54,9 +54,10 @@
     Get-Command Search-Script |        
         Search-Script -For ([IComparable])
 .EXAMPLE
-    # Search for scripts that may be impacted by CVE-2025-54100
+    # Search for scripts that may be impacted by
+    # [CVE-2025-54100](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2025-54100)
     Search-Script { Invoke-WebRequest } {
-        param($ast)            
+        param($ast)
         if (-not $ast.CommandElements -or (
             $ast.CommandElements[0] -notmatch 'Invoke-WebRequest|curl|iwr'
         )) {
@@ -76,10 +77,7 @@
         
         This looks thru the current session history for uses of this command.
     #>
-    param($wordToComplete, $commandAst, $cursorPosition)
-
-    # If there is no command ast, return
-    if (-not $commandAst) { return }
+    param($wordToComplete, $commandAst, $cursorPosition)    
     
     # Whenever we find a match, we need all elements except the one being completed    
     $upTilNow = foreach ($element in $commandAst.CommandElements) {
@@ -90,10 +88,10 @@
     }
     
     # Now, to find any matching history entries, we Get-History
-    @(                
+    @(
         foreach ($historyItem in Get-History) {
             # looking for things that are _like_ the entire ast
-            if ($historyItem.CommandLine -like "$commandAst*") {
+            if ($historyItem.CommandLine -like "$upTilNow*") {
                 # and returning the current word(s) to complete
                 # replacing any leading whitespaces, so we don't tab too much.
                 $historyItem.CommandLine.Substring("$upTilNow".Length) -replace '^\s+'
@@ -102,15 +100,18 @@
     )
 })]
 param(
-# The script to search
+# The script to search.
 [Parameter(ValueFromPipeline,ValueFromPipelineByPropertyName)]
 [Alias('ScriptBlock','Definition','Haystack')]
 [ScriptBlock]
 $Script,
 
 # What we're searching for.
-# Can be a ScriptBlock, string, regex, or ast function
-# If a strign is provided, it will be treated as a pattern.
+# 
+# Can be a ScriptBlock, string, regex, type, or ast function.
+# 
+# If a string is provided, it will be treated as a literal,
+# unless it starts and ends with `/`.
 [ValidateScript({
     $validTypes = 
         [ScriptBlock],
