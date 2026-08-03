@@ -90,8 +90,8 @@ This can quickly and easily find any part of any script in any file.
 
 |Name|Type|Description|
 |-|-|-|
-|Script|ScriptBlock|The script to search|
-|For|PSObject|What we're searching for.<br/>Can be a ScriptBlock, string, regex, or ast function<br/>If a strign is provided, it will be treated as a pattern.|
+|Script|ScriptBlock|The script to search.|
+|For|PSObject|What we're searching for.<br/><br/>Can be a ScriptBlock, string, regex, type, or ast function.<br/><br/>If a string is provided, it will be treated as a literal,<br/>unless it starts and ends with `/`.|
 |Shallow|SwitchParameter|If set, will perform a shallow search.<br/>By default will search a scriptblock and nested blocks.|
 
 ##### Examples
@@ -164,10 +164,11 @@ Get-Command Search-Script |
     Search-Script -For ([IComparable])
 ~~~
 ###### Example 11
-Search for scripts that may be impacted by CVE-2025-54100
+Search for scripts that may be impacted by
+[CVE-2025-54100](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2025-54100)
 ~~~PowerShell
 Search-Script { Invoke-WebRequest } {
-    param($ast)            
+    param($ast)
     if (-not $ast.CommandElements -or (
         $ast.CommandElements[0] -notmatch 'Invoke-WebRequest|curl|iwr'
     )) {
